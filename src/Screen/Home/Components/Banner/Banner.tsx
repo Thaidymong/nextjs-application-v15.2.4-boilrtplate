@@ -1,21 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { motion, AnimatePresence } from "framer-motion";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination } from "swiper/modules";
-import style from "./banner.module.scss";
-import "swiper/css";
-import "swiper/css/pagination";
-import Link from "next/link";
-import { BannerPlaceholder } from "./Placeholder";
-import { bannerList } from "@/common/data";
-import Image from 'next/image'
-
-export type BannerProps = {
-  bannerList: any;
-};
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination } from 'swiper/modules';
+import style from './banner.module.scss';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import Link from 'next/link';
+import { BannerPlaceholder } from './Placeholder';
+import { bannerList } from '@/common/data';
+import Image from 'next/image';
 
 export function Banner() {
   const [mounted, setMounted] = useState(false);
@@ -30,7 +26,7 @@ export function Banner() {
     <div>
       <div className="mx-auto border-0">
         {bannerList ? (
-          <div className="w-full mx-auto">
+          <div className="mx-auto w-full">
             <div className={` ${style.sliderWrapper}`}>
               <Swiper
                 spaceBetween={30}
@@ -44,10 +40,10 @@ export function Banner() {
                 slidesPerView={1}
                 modules={[Autoplay, Pagination]}
                 className="mySwiper"
-                style={{ paddingBottom: "50px" }}
+                style={{ paddingBottom: '50px' }}
               >
                 <AnimatePresence mode="wait">
-                  {bannerList?.data?.map((item: any) => {
+                  {bannerList?.data?.map((item) => {
                     return (
                       <SwiperSlide key={item?.id} className="cursor-pointer">
                         <Link href={item?.link}>
@@ -77,7 +73,7 @@ export function Banner() {
           </div>
         ) : (
           <>
-              <BannerPlaceholder />
+            <BannerPlaceholder />
           </>
         )}
       </div>
