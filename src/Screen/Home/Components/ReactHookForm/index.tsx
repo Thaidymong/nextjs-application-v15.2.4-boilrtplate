@@ -1,160 +1,183 @@
 'use client';
 
-// import { useState } from "react";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { formSchema, UserFormData } from './schema';
 
-export default function HomePage() {
-  // const [pending, startTransition] = useTransition();
-  // const [isChecked, setIsChecked] = useState(false);
+// Default values for the form
+const DEFAULT_VALUES: UserFormData = {
+  name: 'John Doe',
+  phoneNumber: '+1234567890',
+  password: '',
+  confirmPassword: '',
+  note: '',
+  location: '',
+  profile: '',
+};
 
-  // const handleCheckboxClick = () => {
-  //     setIsChecked(!isChecked);
-  // };
+export default function CustomerRegistrationForm() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverErrors, setServerErrors] = useState<string[]>([]);
 
-  // const {
-  //     register,
-  //     handleSubmit,
-  //     formState: { errors, isSubmitting },
-  //     reset,
-  // } = useForm<FormData>({
-  //     resolver: zodResolver(formSchema),
-  // });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<UserFormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: DEFAULT_VALUES,
+  });
 
-  // const onSubmit: SubmitHandler<UpdateProfileInput> = async (input) => {
-  //     startTransition(async () => {
-  //         const { data, error } = await create(id, input);
-  //         if (error) {
-  //             toast.error(error, {
-  //                 position: "top-right",
-  //                 style: {
-  //                     fontSize: "11pt",
-  //                 },
-  //             });
-  //         } else if (data) {
-  //             toast.success("Profile updated successfully", {
-  //                 position: "top-right",
-  //                 style: {
-  //                     fontSize: "11pt",
-  //                 },
-  //             });
-  //             reset();
-  //         }
-  //     });
-  // };
+  const onSubmit = async (data: UserFormData) => {
+    setIsSubmitting(true);
+    setServerErrors([]);
+
+    try {
+      const response = await fetch(
+        'http://localhost:8080/customer/customer-registration',
+        {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            phoneNumber: data.phoneNumber,
+            password: data.password,
+            note: '',
+            location: '',
+            profile: '',
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle array of error messages
+        if (Array.isArray(result.message)) {
+          setServerErrors(result.message);
+          toast.error('Registration failed. Please check the form for errors');
+        } else {
+          throw new Error(result.message || 'Registration failed');
+        }
+        return;
+      }
+
+      toast.success(result.message || 'Registration successful!');
+      reset(DEFAULT_VALUES);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Registration failed',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Form field configuration for cleaner rendering
+  const formFields = [
+    {
+      name: 'name',
+      label: 'Full Name',
+      type: 'text',
+      placeholder: 'John Doe',
+    },
+    {
+      name: 'phoneNumber',
+      label: 'Phone Number',
+      type: 'text',
+      placeholder: '+1 (555) 123-4567',
+    },
+    {
+      name: 'password',
+      label: 'Password',
+      type: showPassword ? 'text' : 'password',
+      placeholder: '••••••••',
+    },
+    {
+      name: 'confirmPassword',
+      label: 'Confirm Password',
+      type: showPassword ? 'text' : 'password',
+      placeholder: '••••••••',
+    },
+  ];
 
   return (
-    <>
-      <div className="container pt-10">
-        <div className="flex justify-center">
-          <form
-            // onSubmit={handleSubmit(onSubmit)}
-            className="pb-5"
+    <div className="container pt-10">
+      <div className="flex justify-center">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="w-full max-w-md space-y-4 pb-5"
+        >
+          {serverErrors.length > 0 && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
+              <p className="mb-1 text-sm font-medium text-red-800">
+                Please fix the following errors:
+              </p>
+              <ul className="list-disc pl-5 text-sm text-red-700">
+                {serverErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {formFields.map((field) => (
+            <div key={field.name} className="mb-4">
+              <label htmlFor={field.name} className="mb-1 block font-normal">
+                {field.label}
+              </label>
+              <input
+                {...register(field.name as keyof UserFormData)}
+                type={field.type}
+                className={`h-10 w-full rounded border px-3 py-2 ${
+                  errors[field.name as keyof typeof errors]
+                    ? 'border-red-500'
+                    : 'border-gray-300'
+                } bg-transparent focus:ring-1 focus:ring-blue-500 focus:outline-none`}
+                placeholder={field.placeholder}
+              />
+              {errors[field.name as keyof typeof errors] && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors[field.name as keyof typeof errors]?.message}
+                </p>
+              )}
+            </div>
+          ))}
+
+          <div className="mb-6 flex items-center">
+            <input
+              type="checkbox"
+              id="showPassword"
+              checked={showPassword}
+              onChange={() => setShowPassword(!showPassword)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="showPassword" className="ml-2 text-sm">
+              Show Password
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`flex h-10 w-full items-center justify-center rounded-md bg-blue-600 px-6 font-medium text-white ${
+              isSubmitting
+                ? 'cursor-not-allowed opacity-70'
+                : 'hover:bg-blue-700'
+            }`}
           >
-            <div className="grid grid-cols-1 text-center">
-              <h3 className="mb-4 text-2xl leading-normal font-semibold">
-                Hook Form
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className="lg:col-span-12">
-                <label htmlFor="email" className="font-semibold">
-                  Firstname
-                </label>
-                <input
-                  // {...register("first_name")}
-                  // className={`  mt-2 w-full py-2 px-3 h-10 bg-transparent  rounded outline-none border focus:ring-0 ${errors.first_name &&
-                  //     "border-1 border-red-500 "
-                  //     }`}
-                  placeholder="firstname"
-                  className={`mt-2 h-10 w-full rounded border bg-transparent px-3 py-2 outline-none focus:ring-0`}
-                />
-                {/* {errors.first_name && (
-                        <p className="text-red-500">{`${errors.first_name.message}`}</p>
-                    )} */}
-              </div>
-              <div className="lg:col-span-12">
-                <label htmlFor="email" className="font-semibold">
-                  Lastname
-                </label>
-                <input
-                  // {...register("last_name")}
-                  // className={`  mt-2 w-full py-2 px-3 h-10 bg-transparent  rounded outline-none border focus:ring-0 ${errors.last_name &&
-                  //     "border-1 border-red-500 "
-                  //     }`}
-                  className={`mt-2 h-10 w-full rounded border bg-transparent px-3 py-2 outline-none focus:ring-0`}
-                  placeholder="lastname"
-                />
-                {/* {errors.last_name && (
-                        <p className="text-red-500">{`${errors.last_name.message}`}</p>
-                    )} */}
-              </div>
-            </div>
-            <div className="lg:col-span-12">
-              <label htmlFor="email" className="font-semibold">
-                Email
-              </label>
-              <input
-                // {...register("email")}
-                // className={`  mt-2 w-full py-2 px-3 h-10 bg-transparent  rounded outline-none border focus:ring-0 ${errors.email && "border-1 border-red-500 "
-                //     }`}
-                className={`mt-2 h-10 w-full rounded border bg-transparent px-3 py-2 outline-none focus:ring-0`}
-                placeholder="dymongthai@gmail.com"
-              />
-              {/* {errors.email && (
-                            <p className="text-red-500">{`${errors.email.message}`}</p>
-                        )} */}
-            </div>
-
-            <div className="lg:col-span-12">
-              <label htmlFor="password" className="font-semibold">
-                Password
-              </label>
-              <input
-                // type={isChecked ? "" : "password"}
-                // {...register("password")}
-                // className={`  mt-2 w-full py-2 px-3 h-10 bg-transparent  rounded outline-none border focus:ring-0 ${errors.password && "border-1 border-red-500 "
-                //     }`}
-                className={`mt-2 h-10 w-full rounded border bg-transparent px-3 py-2 outline-none focus:ring-0`}
-                placeholder="password"
-              />
-              {/* {errors.password && (
-                            <p className="text-red-500 ">{`${errors.password.message}`}</p>
-                        )} */}
-            </div>
-            <div className="lg:col-span-12">
-              <label htmlFor="ComfirmPassword" className="font-semibold">
-                Comfirm Password
-              </label>
-              <input
-                // type={isChecked ? "" : "password"}
-                // {...register("confirmPassword")}
-                // className={`  mt-2 w-full py-2 px-3 h-10 bg-transparent rounded outline-none border focus:ring-0 ${errors.confirmPassword && "border-1 border-red-500 "
-                //     }`}
-                className={`mt-2 h-10 w-full rounded border bg-transparent px-3 py-2 outline-none focus:ring-0`}
-                placeholder="confirm password"
-              />
-              {/* {errors.confirmPassword && (
-                            <p className="text-red-500 ">{`${errors.confirmPassword.message}`}</p>
-                        )} */}
-            </div>
-            <div className="mt-3 w-full">
-              {/* <Checkbox id="terms" onClick={handleCheckboxClick} /> */}
-              <label htmlFor="terms" className="ml-2 text-base">
-                Show Password
-              </label>
-            </div>
-
-            <div className="mt-5">
-              <button
-                type="submit"
-                // disabled={pending}
-                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-sky-700 px-6 font-medium tracking-wide text-white"
-              >
-                save
-              </button>
-            </div>
-          </form>
-        </div>
+            {isSubmitting ? 'Registering...' : 'Register'}
+          </button>
+        </form>
       </div>
-    </>
+    </div>
   );
 }

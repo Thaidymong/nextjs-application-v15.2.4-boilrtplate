@@ -1,9 +1,10 @@
 import { Koh_Santepheap } from 'next/font/google';
 import './globals.css';
 import { LocaleLayout } from '@/components/layout';
-import { Toaster } from 'sonner';
+// import { Toaster } from 'sonner';
 import { siteConfig } from '@/common/config';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import { ToastContainer } from 'react-toastify';
 
 const kohSantepheap = Koh_Santepheap({
   subsets: ['khmer', 'latin'],
@@ -40,13 +41,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${kohSantepheap.className}`}>
-        <Toaster
+        {/* <Toaster
           richColors
           style={{
             fontFamily: kohSantepheap.style.fontFamily,
             fontSize: '11pt',
           }}
-        />
+        /> */}
+        <ToastContainer position="top-right" autoClose={5000} />
         <LocaleLayout>
           <NuqsAdapter>{children}</NuqsAdapter>
         </LocaleLayout>
